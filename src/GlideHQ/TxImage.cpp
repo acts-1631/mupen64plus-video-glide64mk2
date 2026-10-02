@@ -100,6 +100,12 @@ TxImage::readPNG(FILE* fp, int* width, int* height, uint16* format)
     return NULL;
   }
 
+  if (setjmp(png_jmpbuf(png_ptr))) {
+    png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+    DBG_INFO(80, L"Error: failed to prepare png image!\n");
+    return NULL;
+  }
+
   png_get_IHDR(png_ptr, info_ptr,
                &o_width, &o_height, &bit_depth, &color_type,
                &interlace_type, &compression_type, &filter_type);
@@ -189,6 +195,13 @@ TxImage::readPNG(FILE* fp, int* width, int* height, uint16* format)
     uint8* tmpimage;
     png_uint_32 i;
     int pas;
+
+    if (setjmp(png_jmpbuf(png_ptr))) {
+      free(image);
+      png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+      DBG_INFO(80, L"Error: failed to decode png image!\n");
+      return NULL;
+    }
 
     for (pas = 0; pas < num_pas; pas++) { /* deal with interlacing */
       tmpimage = image;
